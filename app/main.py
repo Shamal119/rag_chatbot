@@ -10,28 +10,33 @@ from src.core.llm import get_llm_and_embeddings
 from src.utils.file_handler import process_file
 
 def setup_page():
-   st.set_page_config(
-       page_title="RAG Chatbot",
-       layout="centered",
-       initial_sidebar_state="expanded"
-   )
-   st.markdown("""
-       <style>
-       .stApp { max-width: 1200px; margin: 0 auto; }
-       .chat-message {
-           padding: 1.5rem; 
-           border-radius: 0.5rem;
-           margin-bottom: 1rem;
-           box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-       }
-       .user-message { background: #f0f7ff; }
-       .assistant-message { background: #f8f9fa; }
-       .sidebar .stButton>button {
-           width: 100%;
-           margin-top: 1rem;
-       }
-       </style>
-       """, unsafe_allow_html=True)
+    st.set_page_config(
+        page_title="DocuChat",
+        layout="centered",
+        initial_sidebar_state="expanded"
+    )
+    st.markdown("""
+        <style>
+        .stApp { max-width: 1200px; margin: 0 auto; }
+        .chat-message {
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+        .user-message { background: #e6f7ff; border-left: 5px solid #1890ff; }
+        .assistant-message { background: #f9f9f9; border-left: 5px solid #52c41a; }
+        .sidebar .stButton>button {
+            width: 100%;
+            margin-top: 1rem;
+            border-radius: 0.5rem;
+        }
+        .stTextInput>div>div>input {
+            border-radius: 0.5rem;
+        }
+        </style>
+        """, unsafe_allow_html=True)
 
 def initialize_session_state():
    if "messages" not in st.session_state:
@@ -56,7 +61,7 @@ def handle_chat(prompt, chain):
        
        st.session_state.messages.append({
            "role": "assistant",
-           "content": response["answer"],
+           "content": response.get("answer", "Sorry, I couldn't find an answer."),
            "sources": response.get("source_documents", [])
        })
        
@@ -70,20 +75,34 @@ def display_chat():
    for message in st.session_state.messages:
        with st.chat_message(message["role"]):
            st.markdown(message["content"])
-           if message["role"] == "assistant" and "sources" in message:
+           if message["role"] == "assistant" and message.get("sources"):
                with st.expander("View Sources"):
                    for idx, source in enumerate(message["sources"], 1):
-                       st.markdown(f"**Source {idx}:**")
-                       st.code(source, language="text")
+                       source_name = source.metadata.get('source', 'Unknown Source')
+                       st.markdown(f"**Source {idx}: {source_name}**")
+                       st.code(source.page_content, language="text")
 
 def main():
    setup_page()
    initialize_session_state()
 
-   st.title("Chat Assistant")
+   st.title("📄 DocuChat: Your Personal Document Assistant")
+   st.write("""
+       Welcome to **DocuChat**, your intelligent assistant for understanding and interacting with your documents.
+       Upload your files, and I'll help you find the information you need.
+   """)
 
    with st.sidebar:
-       st.header("Configuration")
+       st.header("⚙️ Configuration")
+       st.markdown("---")
+       st.subheader("How It Works")
+       st.info("""
+           1.  **Select your API**: Choose between OpenAI or Gemini.
+           2.  **Enter your API key**: Securely enter your key to power the chat.
+           3.  **Upload your documents**: PDF and TXT files are supported.
+           4.  **Process and chat**: Click 'Process' and start asking questions!
+       """)
+       st.markdown("---")
        api_choice = st.selectbox("Select API", ["OpenAI", "Gemini"])
        api_key = st.text_input("Enter API Key", type="password")
 

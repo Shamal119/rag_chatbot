@@ -19,15 +19,21 @@ class RAGSystem:
             memory_key="chat_history", return_messages=True
         )
 
-        # Updated prompt template for precise and clear answers
+        # Humanized and detailed prompt template
         self.qa_template = """
-        Answer based on the context provided. Be concise and specific. If the answer cannot be found in the context, say so.
+        You are a friendly and helpful assistant. Based on the documents provided, answer the user's question in a clear and detailed manner.
+        If the answer is in the context, start with a friendly tone. If you can't find the answer, just say that you couldn't find the information in the documents.
 
-        Context: {context}
-        Chat History: {chat_history}
-        Question: {question}
+        Context:
+        {context}
 
-        Answer: Let me provide the information from the context:"""
+        Chat History:
+        {chat_history}
+
+        Question:
+        {question}
+
+        Helpful Answer:"""
 
     def create_vectorstore(self, documents):
         texts = self.text_splitter.split_documents(documents)
@@ -39,7 +45,7 @@ class RAGSystem:
             template=self.qa_template
         )
         
-        # Chain set to return only answer, ensuring compatibility with memory
+        # Chain now returns source documents and the answer
         chain = ConversationalRetrievalChain.from_llm(
             llm=self.llm,
             retriever=vectorstore.as_retriever(
@@ -47,9 +53,8 @@ class RAGSystem:
                 search_kwargs={"k": 3}
             ),
             combine_docs_chain_kwargs={"prompt": prompt},
-            return_source_documents=False,  # Only return 'answer' for memory compatibility
+            return_source_documents=True,  # Return source documents
             memory=self.memory,
-            output_key="answer",
             verbose=True
         )
         return chain
