@@ -64,7 +64,7 @@ def handle_chat(prompt, chain):
        st.error(f"Error processing request: {str(e)}")
        return
        
-   st.experimental_rerun()
+   st.rerun()
 
 def display_chat():
    for message in st.session_state.messages:
